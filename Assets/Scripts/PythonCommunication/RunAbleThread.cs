@@ -35,6 +35,7 @@ public abstract class RunAbleThread
         Running = false;
         // block main thread, wait for _runnerThread to finish its job first, so we can be sure that 
         // _runnerThread will end before main thread end
-        _runnerThread.Join();
+        if (_runnerThread.ThreadState == ThreadState.Running)
+            _runnerThread.Join();
     }
 }

@@ -1,6 +1,6 @@
-using AsyncIO;
-using NetMQ;
-using NetMQ.Sockets;
+//using AsyncIO;
+//using NetMQ;
+//using NetMQ.Sockets;
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -22,26 +22,26 @@ public class Requester : RunAbleThread
     /// </summary>
     protected override void Run()
     {
-        ForceDotNet.Force(); // this line is needed to prevent unity freeze after one use, not sure why yet
-        using (RequestSocket client = new RequestSocket())
-        {
-            client.Connect("tcp://192.168.18.211:5555");
+        //    ForceDotNet.Force(); // this line is needed to prevent unity freeze after one use, not sure why yet
+        //    using (RequestSocket client = new RequestSocket())
+        //    {
+        //        client.Connect("tcp://192.168.18.211:5555");
 
-            foreach (string msg in MessagesToSend)
-            {
-                client.SendFrame(msg);
+        //        foreach (string msg in MessagesToSend)
+        //        {
+        //            client.SendFrame(msg);
 
-                bool gotMessage = false;
-                while (Running)
-                {
-                    gotMessage = client.TryReceiveFrameString(out MessageReceived); // this returns true if it's successful
-                    if (gotMessage) break;
-                }
+        //            bool gotMessage = false;
+        //            while (Running)
+        //            {
+        //                gotMessage = client.TryReceiveFrameString(out MessageReceived); // this returns true if it's successful
+        //                if (gotMessage) break;
+        //            }
 
-                if (gotMessage) Debug.Log("Received " + MessageReceived);
-            }
-        }
+        //            if (gotMessage) Debug.Log("Received " + MessageReceived);
+        //        }
+        //    }
 
-        NetMQConfig.Cleanup(); // this line is needed to prevent unity freeze after one use, not sure why yet
+        //    NetMQConfig.Cleanup(); // this line is needed to prevent unity freeze after one use, not sure why yet
     }
 }

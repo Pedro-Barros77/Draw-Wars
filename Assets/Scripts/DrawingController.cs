@@ -83,7 +83,7 @@ public class DrawingController : MonoBehaviour
             drawingCamera = Camera.main;
         }
 
-        var filesPath = Path.Combine(Application.dataPath, "Last_Game_Drawings");
+        var filesPath = Path.Combine(Application.dataPath, "temp_data", "Last_Game_Drawings");
         if (Directory.Exists(filesPath))
         {
             var files = Directory.GetFiles(filesPath);
@@ -215,12 +215,12 @@ public class DrawingController : MonoBehaviour
         byte[] bytes;
         bytes = scaledDownPhoto.EncodeToJPG();
 
-        if (!Directory.Exists(Path.Combine(Application.dataPath, "Last_Game_Drawings")))
+        if (!Directory.Exists(Path.Combine(Application.dataPath,"temp_data", "Last_Game_Drawings")))
         {
-            Directory.CreateDirectory(Path.Combine(Application.dataPath, "Last_Game_Drawings"));
+            Directory.CreateDirectory(Path.Combine(Application.dataPath, "temp_data", "Last_Game_Drawings"));
         }
 
-        string filePath = Path.Combine(Application.dataPath, "Last_Game_Drawings");
+        string filePath = Path.Combine(Application.dataPath, "temp_data", "Last_Game_Drawings");
         string[] files = Directory.GetFiles(filePath).Where(f => f.EndsWith(".jpg")).ToArray();
         string filename = $"My_Drawing_{files.Length + 1}.jpg";
 

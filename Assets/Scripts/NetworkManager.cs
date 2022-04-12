@@ -1,12 +1,14 @@
 using Photon.Pun;
 using Photon.Realtime;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class NetworkManager : MonoBehaviourPunCallbacks
+public class NetworkManager : MonoBehaviourPunCallbacks, ILobbyCallbacks
 {
     public static NetworkManager Instance { get; private set; }
+    public static List<RoomInfo> OpenRooms { get; private set; }
 
     private void Awake()
     {
@@ -34,14 +36,26 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         PhotonNetwork.CreateRoom(roomName);
     }
 
-    public void EnterRoom(string roomName)
+    public void EnterRoom(string roomName, string playerName)
     {
         PhotonNetwork.JoinRoom(roomName);
+        PhotonNetwork.CurrentRoom.CustomProperties.Add("PlayersList", new List<string>() { playerName });
     }
 
     public void LeaveRoom()
     {
         PhotonNetwork.LeaveRoom();
+    }
+
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        OpenRooms = roomList;
+        base.OnRoomListUpdate(roomList);
+    }
+
+    public List<RoomInfo> GetRooms()
+    {
+        return OpenRooms;
     }
 
     [PunRPC]

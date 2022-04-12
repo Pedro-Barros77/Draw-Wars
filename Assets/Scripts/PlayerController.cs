@@ -57,7 +57,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             {
                 next = (string)stream.ReceiveNext();
             }
-            catch (IndexOutOfRangeException ex)
+            catch (IndexOutOfRangeException)
             {
                 Debug.Log((object)"Out Of Range");
                 return;
