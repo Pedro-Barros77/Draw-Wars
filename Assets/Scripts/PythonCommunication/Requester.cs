@@ -13,7 +13,7 @@ using WebSocketSharp;
 /// </summary>
 public class Requester : RunAbleThread
 {
-    private string MessageReceived = null;
+    //private string MessageReceived = null;
     public string[] MessagesToSend = new string[1] { "" };
 
     /// <summary>
