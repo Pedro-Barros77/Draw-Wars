@@ -18,6 +18,10 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     public float MovementSpeed { get; private set; } = 10f;
 
+    /// <summary>
+    /// Chamado pelo servidor para cada jogador ao iniciar o jogo
+    /// </summary>
+    /// <param name="player">O jogador</param>
     [PunRPC]
     public void Init(Player player)
     {
@@ -27,8 +31,17 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         this._isPlayerOwner = this.photonView.IsMine;
     }
 
-    private void Start() => this.drawingController = this.GetComponent<DrawingController>();
+    /// <summary>
+    /// Chamado ao iniciar o jogo, antes do primeiro frame
+    /// </summary>
+    private void Start()
+    {
+        this.drawingController = this.GetComponent<DrawingController>();
+    }
 
+    /// <summary>
+    /// Chamado uma vez por frame. Varia de acordo com a capacidade da máquina
+    /// </summary>
     private void Update()
     {
         if (PhotonNetwork.IsConnected && !this._isPlayerOwner)
@@ -36,11 +49,28 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         this.transform.Translate(new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0.0f) * this.MovementSpeed * Time.deltaTime);
     }
 
-    public void ClearDrawings() => this.photonView.RPC("ClearEnemyDrawings", NetworkManager.Instance.GetEnemyPlayer());
+    /// <summary>
+    /// Envia para o servidor a informação de que o jogador limpou seus desenhos, para que seja removido da tela deo inimigo
+    /// </summary>
+    public void ClearDrawings()
+    {
+        this.photonView.RPC("ClearEnemyDrawings", NetworkManager.Instance.GetEnemyPlayer());
+    }
 
+    /// <summary>
+    /// Chamado pelo servidor quando o inimigo limpa seus desenhos
+    /// </summary>
     [PunRPC]
-    public void ClearEnemyDrawings() => this.drawingController.ClearEnemyDrawings();
+    public void ClearEnemyDrawings()
+    {
+        this.drawingController.ClearEnemyDrawings();
+    }
 
+    /// <summary>
+    /// Similar ao Update, envia(se isWriting = true) ou recebe(se isWriting = false) informações para o servidor diversas vezes por segundo
+    /// </summary>
+    /// <param name="stream">O componente PhotonStream deste GameObject</param>
+    /// <param name="info">Informações sobre o RPC</param>
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
         if (stream.IsWriting)
@@ -57,7 +87,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             {
                 next = (string)stream.ReceiveNext();
             }
-            catch (IndexOutOfRangeException ex)
+            catch (IndexOutOfRangeException)
             {
                 Debug.Log((object)"Out Of Range");
                 return;

@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
+/// <summary>
+/// Classes necessárias para converter os desenhos em JSON
+/// </summary>
 #region JSON_Classes
 [Serializable]
 public class Drawings
@@ -35,7 +39,11 @@ public class Coord
         this.y = RoundToString(y);
     }
 
-
+    /// <summary>
+    /// Simplifica o valor informado, deixando apenas duas casas decimais e converte para string. Otimiza a performance do JSON ao eliminar precisão desnecessária
+    /// </summary>
+    /// <param name="value">Valor a ser simplificado</param>
+    /// <returns>Uma string representando o valor com apenas duas casas decimais (o separador varia de acordo com a localidade global)</returns>
     string RoundToString(float value)
     {
         CultureInfo info = CultureInfo.CurrentCulture;
@@ -58,6 +66,8 @@ public class DrawingController : MonoBehaviour
     public RenderTexture drawingTexture, enemyDrawingTexture;
     public Transform myDrawingsContainer, enemyDrawingsContainer;
 
+    [SerializeField] private Client client;
+
     public Drawings MyDrawings;
     public Drawings EnemyDrawings;
     public List<List<Vector2>> DrawingsList = new List<List<Vector2>>();
@@ -70,6 +80,9 @@ public class DrawingController : MonoBehaviour
     float enemyDrawDelay = 1000f;
     Coord currentEnemyCoord;
 
+    /// <summary>
+    /// Chamado ao iniciar o jogo, antes do primeiro frame
+    /// </summary>
     private void Start()
     {
         screenWidth = Screen.width;
@@ -80,7 +93,7 @@ public class DrawingController : MonoBehaviour
             drawingCamera = Camera.main;
         }
 
-        var filesPath = Path.Combine(Application.dataPath, "Last_Game_Drawings");
+        var filesPath = Path.Combine(Application.dataPath, "temp_data", "Last_Game_Drawings");
         if (Directory.Exists(filesPath))
         {
             var files = Directory.GetFiles(filesPath);
@@ -98,6 +111,9 @@ public class DrawingController : MonoBehaviour
         lastEnemyDraw = DateTime.Now;
     }
 
+    /// <summary>
+    /// Chamado uma vez por frame. Varia de acordo com a capacidade da máquina
+    /// </summary>
     private void Update()
     {
         Draw();
@@ -110,8 +126,18 @@ public class DrawingController : MonoBehaviour
                 lastEnemyDraw = DateTime.Now;
             }
         }
+
+        if (client.hasResult)
+        {
+            Debug.Log(client.lastResult);
+            client.lastResult = 0;
+            client.hasResult = false;
+        }
     }
 
+    /// <summary>
+    /// Controla o desenho do jogador
+    /// </summary>
     void Draw()
     {
         if (Input.GetKeyDown(KeyCode.Mouse0))
@@ -137,7 +163,12 @@ public class DrawingController : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                SaveDrawing();
+                string fileName = "carro.jpg";
+                string pythonFolder = Path.Combine(Application.dataPath, "..\\PythonAPI");
+                byte[] carro = File.ReadAllBytes(Path.Combine(pythonFolder, fileName));
+
+                byte[] myDrawing = SaveDrawing();
+                client.SendImages(myDrawing, carro);
                 DrawingsList.Clear();
                 playerCTRL.ClearDrawings();
             }
@@ -150,6 +181,9 @@ public class DrawingController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Controla o desenho do inimigo
+    /// </summary>
     void DrawEnemy()
     {
         if (EnemyDrawings == null || EnemyDrawings.Shapes == null || EnemyDrawings.Shapes.Length == 0) return; //Não tem desenhos
@@ -184,9 +218,14 @@ public class DrawingController : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Salva o desenho do jogador
+    /// </summary>
+    /// <returns>um array de bytes contendo o desenho em JPG</returns>
     byte[] SaveDrawing()
     {
         if (!playerCTRL._isPlayerOwner) return new byte[0];
+
         RenderTexture.active = drawingTexture;
         Texture2D virtualPhoto = new Texture2D(screenWidth, screenHeight, TextureFormat.RGB24, false);
 
@@ -197,16 +236,16 @@ public class DrawingController : MonoBehaviour
         Texture2D scaledDownPhoto = ScaleTexture(virtualPhoto, 640, 360);
 
         byte[] bytes;
-        bytes = scaledDownPhoto.EncodeToPNG();
+        bytes = scaledDownPhoto.EncodeToJPG();
 
-        if (!Directory.Exists(Path.Combine(Application.dataPath, "Last_Game_Drawings")))
+        if (!Directory.Exists(Path.Combine(Application.dataPath,"temp_data", "Last_Game_Drawings")))
         {
-            Directory.CreateDirectory(Path.Combine(Application.dataPath, "Last_Game_Drawings"));
+            Directory.CreateDirectory(Path.Combine(Application.dataPath, "temp_data", "Last_Game_Drawings"));
         }
 
-        string filePath = Path.Combine(Application.dataPath, "Last_Game_Drawings");
-        string[] files = Directory.GetFiles(filePath).Where(f => f.EndsWith(".png")).ToArray();
-        string filename = $"My_Drawing_{files.Length + 1}.png";
+        string filePath = Path.Combine(Application.dataPath, "temp_data", "Last_Game_Drawings");
+        string[] files = Directory.GetFiles(filePath).Where(f => f.EndsWith(".jpg")).ToArray();
+        string filename = $"My_Drawing_{files.Length + 1}.jpg";
 
         GUIUtility.systemCopyBuffer = filePath;
 
@@ -221,6 +260,9 @@ public class DrawingController : MonoBehaviour
         return bytes;
     }
 
+    /// <summary>
+    /// Limpa os desenhos do inimigo
+    /// </summary>
     public void ClearEnemyDrawings()
     {
         EnemyDrawings = new Drawings();
@@ -231,6 +273,10 @@ public class DrawingController : MonoBehaviour
         currentEnemyCoord = null;
     }
 
+    /// <summary>
+    /// Cria um novo pincel
+    /// </summary>
+    /// <returns>A posição do primeiro ponto deste desenho</returns>
     Vector2 CreateBrush()
     {
         GameObject brushInstance = Instantiate(brush, myDrawingsContainer);
@@ -249,6 +295,10 @@ public class DrawingController : MonoBehaviour
         return roundedPos;
     }
 
+    /// <summary>
+    /// Cria um pincel inimigo
+    /// </summary>
+    /// <param name="startPos">A posição do primeiro ponto deste desenho</param>
     void CreateEnemyBrush(Coord startPos)
     {
         GameObject brushInstance = Instantiate(enemyBrush, enemyDrawingsContainer);
@@ -261,6 +311,10 @@ public class DrawingController : MonoBehaviour
         enemyLineRenderer.SetPosition(1, new Vector2(float.Parse(startPos.x), float.Parse(startPos.y)));
     }
 
+    /// <summary>
+    /// Adiciona um novo ponto no desenho atual
+    /// </summary>
+    /// <param name="pointPos">Posição do ponto a ser adicionado</param>
     void AddPoint(Vector2 pointPos)
     {
         lineRenderer.positionCount++;
@@ -270,6 +324,10 @@ public class DrawingController : MonoBehaviour
         DrawingsList[DrawingsList.Count - 1].Add(pointPos);
     }
 
+    /// <summary>
+    /// Adiciona um novo ponto no desenho atual do inimigo
+    /// </summary>
+    /// <param name="pointPos">Posição do ponto a ser adicionado</param>
     void AddEnemyPoint(Coord pointPos)
     {
         enemyLineRenderer.positionCount++;
@@ -277,6 +335,13 @@ public class DrawingController : MonoBehaviour
         enemyLineRenderer.SetPosition(posIndex, new Vector2(float.Parse(pointPos.x), float.Parse(pointPos.y)));
     }
 
+    /// <summary>
+    /// Redimensiona a imagem atual para o tamanho desejado
+    /// </summary>
+    /// <param name="source">Imagem a ser redimensionada</param>
+    /// <param name="targetWidth">Largura alvo</param>
+    /// <param name="targetHeight">Altura alvo</param>
+    /// <returns>A imagem redimensionada</returns>
     private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
     {
         Texture2D result = new Texture2D(targetWidth, targetHeight, source.format, true);
@@ -293,11 +358,20 @@ public class DrawingController : MonoBehaviour
         return result;
     }
 
+    /// <summary>
+    /// Verifica se há conexão com o servidor
+    /// </summary>
+    /// <returns>True se está conectado, False se não</returns>
     bool IsConnected()
     {
         return NetworkManager.Instance != null && NetworkManager.Instance.IsConnected();
     }
 
+    /// <summary>
+    /// Elimina as casas decimais, deixando apenas duas. Elimina precisão desnecessária.
+    /// </summary>
+    /// <param name="value">Valor a ser simplificado</param>
+    /// <returns>O valor com apenas duas casas decimais</returns>
     float Round(float value)
     {
         CultureInfo info = CultureInfo.CurrentCulture;
@@ -312,6 +386,11 @@ public class DrawingController : MonoBehaviour
         return float.Parse(result);
     }
 
+    /// <summary>
+    /// Elimina as casas decimais de X e Y, deixando apenas duas. Elimina precisão desnecessária.
+    /// </summary>
+    /// <param name="value">Vector2 a ser simplificado</param>
+    /// <returns>O valor com apenas duas casas decimais para X e Y</returns>
     Vector2 Round(Vector2 value)
     {
         float x = Round(value.x);
