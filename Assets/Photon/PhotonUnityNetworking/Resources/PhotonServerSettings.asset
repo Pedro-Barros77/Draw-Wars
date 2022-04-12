@@ -38,13 +38,15 @@ MonoBehaviour:
   - ClearEnemyDrawings
   - ClickRpc
   - DestroyRpc
-  - Init
-  - StartGame
-  - UpdateNamesList
-  - GetUpdatedOpenRooms
   - DestroySpaceship
   - Fire
+  - GetUpdatedOpenRooms
+  - Init
   - RespawnSpaceship
+  - StartGame
+  - UpdateNamesList
+  - SendUpdatedRoomPlayers
+  - UpdateRoomPlayers
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

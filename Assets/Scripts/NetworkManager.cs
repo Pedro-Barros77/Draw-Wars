@@ -9,7 +9,6 @@ using UnityEngine;
 public class NetworkManager : MonoBehaviourPunCallbacks, ILobbyCallbacks
 {
     public static NetworkManager Instance { get; private set; }
-    private static List<RoomInfo> OpenRooms { get; set; }
 
     /// <summary>
     /// Chamado antes de iniciar o jogo
@@ -34,6 +33,15 @@ public class NetworkManager : MonoBehaviourPunCallbacks, ILobbyCallbacks
     }
 
     /// <summary>
+    /// Entra no lobby (Grupo de salas) padrão
+    /// </summary>
+    public void EnterLobby()
+    {
+        if (!PhotonNetwork.InLobby)
+            PhotonNetwork.JoinLobby();
+    }
+
+    /// <summary>
     /// Altera o nome do jogador atual
     /// </summary>
     /// <param name="nickName">Novo nome</param>
@@ -48,7 +56,9 @@ public class NetworkManager : MonoBehaviourPunCallbacks, ILobbyCallbacks
     /// <param name="roomName">Nome da sala</param>
     public void CreateRoom(string roomName)
     {
-        PhotonNetwork.CreateRoom(roomName);
+        RoomOptions roomOptions = new RoomOptions();
+        roomOptions.MaxPlayers = 2;
+        PhotonNetwork.CreateRoom(roomName, roomOptions);
     }
 
     /// <summary>
@@ -60,71 +70,12 @@ public class NetworkManager : MonoBehaviourPunCallbacks, ILobbyCallbacks
         PhotonNetwork.JoinRoom(roomName);
     }
 
-    public override void OnCreatedRoom()
-    {
-        base.OnCreatedRoom();
-
-        UpdateOpenRooms(PhotonNetwork.CurrentRoom);
-    }
-
-    public override void OnJoinedRoom()
-    {
-        base.OnJoinedRoom();
-
-        string p1 = "", p2 = "";
-        switch (PhotonNetwork.CurrentRoom.PlayerCount)
-        {
-            case 1:
-                p1 = PhotonNetwork.PlayerList[0].NickName;
-                p2 = "";
-                break;
-            case 2:
-                p1 = PhotonNetwork.PlayerList[0].NickName;
-                p2 = PhotonNetwork.PlayerList[1].NickName;
-                break;
-        }
-
-        PhotonNetwork.CurrentRoom.SetCustomProperties(new Hashtable()
-        {
-            { "Player1", p1 },
-            { "Player2", p2 }
-        });
-    }
-
     /// <summary>
     /// Deixa a sala
     /// </summary>
     public void LeaveRoom()
     {
         PhotonNetwork.LeaveRoom();
-    }
-
-    void UpdateOpenRooms(RoomInfo newRoom)
-    {
-        photonView.RPC("GetUpdatedOpenRooms", RpcTarget.All, newRoom.Name, newRoom.CustomProperties["Player1"], newRoom.CustomProperties["Player2"]);
-    }
-
-    [PunRPC]
-    public void GetUpdatedOpenRooms(string roomName, string p1, string p2)
-    {
-        Room newRoom = new Room(roomName, new RoomOptions());
-        newRoom.SetCustomProperties(new Hashtable()
-        {
-            { "Player1", p1 },
-            { "Player2", p2 }
-        });
-        RoomInfo roomInfo = newRoom;
-
-        OpenRooms.Add(roomInfo);
-    }
-
-    /// <summary>
-    /// Retorna uma lista contendo as salas existentes
-    /// </summary>
-    /// <returns>Lista de RoomInfo das salas abertas</returns>
-    public List<RoomInfo> GetRooms()
-    {
-        return OpenRooms;
     }
 
     /// <summary>

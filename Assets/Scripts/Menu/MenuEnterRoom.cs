@@ -1,6 +1,7 @@
 using Photon.Realtime;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,33 +18,35 @@ public class MenuEnterRoom : MonoBehaviour
     [SerializeField]
     private GameObject createContainer, rowPrefab, roomsGrid;
 
-    void UpdateOpenRooms(List<RoomInfo> rooms)
+    void UpdateOpenRooms()
     {
-        Debug.Log("Called");
-        if (rooms == null || !rooms.Any()) return;
+        //Debug.Log("Called");
+        //Dictionary<string, string[]> roomPlayers = NetworkManager.Instance.GetRoomPlayers();
+        //if (roomPlayers == null || !roomPlayers.Any()) return;
 
-        Debug.Log("Rooms: " + rooms.Count);
-        foreach (RoomInfo room in rooms)
-        {
-            GameObject row = Instantiate(rowPrefab, roomsGrid.transform);
-            row.transform.Find("RoomName").GetComponent<Text>().text = room.Name;
-            var p1Name = (string)room.CustomProperties["Player1"];
-            var p2Name = (string)room.CustomProperties["Player2"];
-            var txtP1 = row.transform.Find("P1").GetComponent<Text>();
-            var txtP2 = row.transform.Find("P2").GetComponent<Text>();
-            txtP1.text = p1Name;
-            var btnEnter = row.transform.Find("btnEnter").gameObject; ;
-            if (string.IsNullOrEmpty(p1Name))
-            {
-                txtP2.gameObject.SetActive(false);
-                btnEnter.SetActive(true);
-            }
-            else
-            {
-                txtP2.text = p2Name;
-                btnEnter.SetActive(false);
-            }
-        }
+        //foreach (var room in roomPlayers)
+        //{
+        //    GameObject row = Instantiate(rowPrefab, roomsGrid.transform);
+        //    row.transform.Find("RoomName").GetComponent<Text>().text = room.Key;
+
+        //    string p1Name = string.IsNullOrEmpty(room.Value?[0]) ? "" : room.Value[0];
+        //    string p2Name = string.IsNullOrEmpty(room.Value?[1]) ? "" : room.Value[0];
+        //    var txtP1 = row.transform.Find("P1").GetComponent<Text>();
+        //    var txtP2 = row.transform.Find("P2").GetComponent<Text>();
+
+        //    txtP1.text = p1Name;
+        //    var btnEnter = row.transform.Find("btnEnter").gameObject; ;
+        //    if (string.IsNullOrEmpty(p1Name))
+        //    {
+        //        txtP2.gameObject.SetActive(false);
+        //        btnEnter.SetActive(true);
+        //    }
+        //    else
+        //    {
+        //        txtP2.text = p2Name;
+        //        btnEnter.SetActive(false);
+        //    }
+        //}
     }
 
     /// <summary>
@@ -102,6 +105,6 @@ public class MenuEnterRoom : MonoBehaviour
     /// </summary>
     private void OnEnable()
     {
-        UpdateOpenRooms(NetworkManager.Instance.GetRooms());
+        NetworkManager.Instance.EnterLobby();
     }
 }
